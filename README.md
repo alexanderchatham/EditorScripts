@@ -5,6 +5,7 @@ A collection of useful Unity editor scripts to streamline development workflows.
 - **Transparent Thumbnail Generator:** Quickly generate transparent PNG thumbnails for selected prefabs.
 - **Anchor Setter:** Automatically adjust anchors for selected UI elements.
 - **Cloud Code Editor:** Interact with Unity Cloud Code directly from the Unity Editor.
+- **Scriptable Object Creator:** Easily Create and Edit scriptable objects.
 
 ## Installation
 1. Clone or download this repository.
@@ -29,6 +30,7 @@ A collection of useful Unity editor scripts to streamline development workflows.
   2. Select a `ScriptableObject` type from the dropdown menu.
   3. Enter a name for the new object and click **Create ScriptableObject**.
   4. Use the built-in UI to set properties for the created object directly in the editor.
+  5. ScriptableObject Scripts must be saved in Assets/Scripts/ScriptableObjects 
 
 
 ## License
