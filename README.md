@@ -24,6 +24,13 @@ A collection of useful Unity editor scripts to streamline development workflows.
   1. Open the Cloud Code Editor via `Tools > Cloud Code Editor`.
   2. Load a MonoScript containing Cloud Code functions and execute them.
 
+- **ScriptableObject Creator:**
+  1. Open the ScriptableObject Creator via `Tools > Scriptable Object Creator`.
+  2. Select a `ScriptableObject` type from the dropdown menu.
+  3. Enter a name for the new object and click **Create ScriptableObject**.
+  4. Use the built-in UI to set properties for the created object directly in the editor.
+
+
 ## License
 MIT License. See [LICENSE](LICENSE) for details.
 
