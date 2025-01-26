@@ -30,7 +30,7 @@ A collection of useful Unity editor scripts to streamline development workflows.
   2. Select a `ScriptableObject` type from the dropdown menu.
   3. Enter a name for the new object and click **Create ScriptableObject**.
   4. Use the built-in UI to set properties for the created object directly in the editor.
-  5. ScriptableObject Scripts must be saved in 'Assets/Scripts/ScriptableObjects'. 
+  5. ScriptableObject Scripts must be saved in `Assets/Scripts/ScriptableObjects`. 
 
 
 ## License
