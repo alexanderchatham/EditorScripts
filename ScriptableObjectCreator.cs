@@ -12,6 +12,7 @@ public class ScriptableObjectCreator : EditorWindow
     private string[] scriptableObjectTypes;
     private int selectedTypeIndex = 0;
     public ScriptableObject currentObject;
+    private Vector2 scrollPosition;
 
     [MenuItem("Tools/Scriptable Object Creator")]
     public static void ShowWindow()
@@ -35,6 +36,7 @@ public class ScriptableObjectCreator : EditorWindow
 
     void OnGUI()
     {
+        int arrayLines = 0;
         GUILayout.Label("Create a New ScriptableObject", EditorStyles.boldLabel);
 
         if (scriptableObjectTypes.Length == 0)
@@ -46,32 +48,46 @@ public class ScriptableObjectCreator : EditorWindow
         selectedTypeIndex = EditorGUILayout.Popup("ScriptableObject Type", selectedTypeIndex, scriptableObjectTypes.Select(type => type.Split(',')[0]).ToArray());
         objectName = EditorGUILayout.TextField("Object Name", objectName);
 
-        GUILayout.Label("Selected Object", EditorStyles.boldLabel);
         ScriptableObject previousObject = currentObject;
-        currentObject = (ScriptableObject)EditorGUILayout.ObjectField(currentObject, typeof(ScriptableObject), true);
-
         if (currentObject != null && currentObject != previousObject)
         {
             selectedObjectType = currentObject.GetType();
             objectName = AssetDatabase.GetAssetPath(currentObject).Split('/').Last().Replace(".asset", "");
             selectedTypeIndex = Array.IndexOf(scriptableObjectTypes, selectedObjectType.AssemblyQualifiedName);
         }
-
-        if (GUILayout.Button("Create ScriptableObject"))
+        else if (currentObject == null && previousObject != null)
         {
-            CreateNewScriptableObject();
+            selectedObjectType = null;
+            objectName = "NewObject";
+            selectedTypeIndex = 0;
         }
+        if(currentObject == null)
+        {
+
+            if (GUILayout.Button("Create ScriptableObject"))
+            {
+                CreateNewScriptableObject();
+            }
+        }
+
+        GUILayout.Label("Selected Object", EditorStyles.boldLabel);
+        currentObject = (ScriptableObject)EditorGUILayout.ObjectField(currentObject, typeof(ScriptableObject), true);
 
         if (currentObject != null)
         {
             GUILayout.Space(10);
+
+            scrollPosition = GUILayout.BeginScrollView(scrollPosition);
+
             GUILayout.Label("Set Properties", EditorStyles.boldLabel);
 
             foreach (var field in currentObject.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance))
             {
                 object fieldValue = field.GetValue(currentObject);
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(ObjectNames.NicifyVariableName(field.Name), GUILayout.Width(150));
+
+                if (!field.FieldType.IsArray&&field.FieldType != typeof(Gradient))
+                    GUILayout.Label(ObjectNames.NicifyVariableName(field.Name), GUILayout.Width(150));
 
                 GUI.SetNextControlName(field.Name);
 
@@ -91,6 +107,56 @@ public class ScriptableObjectCreator : EditorWindow
                 {
                     field.SetValue(currentObject, EditorGUILayout.Toggle((bool)fieldValue));
                 }
+                else if (field.FieldType == typeof(GameObject))
+                {
+                    field.SetValue(currentObject, (GameObject)EditorGUILayout.ObjectField((GameObject)fieldValue, typeof(GameObject), true));
+                }
+                else if (field.FieldType == typeof(Texture))
+                {
+                    field.SetValue(currentObject, (Texture)EditorGUILayout.ObjectField((Texture)fieldValue, typeof(Texture), true));
+                }
+                else if (field.FieldType == typeof(Material))
+                {
+                    field.SetValue(currentObject, (Material)EditorGUILayout.ObjectField((Material)fieldValue, typeof(Material), true));
+                }
+                else if (field.FieldType == typeof(AudioClip))
+                {
+                    field.SetValue(currentObject, (AudioClip)EditorGUILayout.ObjectField((AudioClip)fieldValue, typeof(AudioClip), true));
+                }
+                else if (field.FieldType == typeof(Vector2))
+                {
+                    field.SetValue(currentObject, EditorGUILayout.Vector2Field("", (Vector2)fieldValue));
+                }
+                else if (field.FieldType == typeof(Vector3))
+                {
+                    field.SetValue(currentObject, EditorGUILayout.Vector3Field("", (Vector3)fieldValue));
+                }
+                else if (field.FieldType == typeof(Vector4))
+                {
+                    Vector4 temp = (Vector4)fieldValue;
+                    temp = EditorGUILayout.Vector4Field("", temp);
+                    field.SetValue(currentObject, temp);
+                }
+                else if (field.FieldType == typeof(Color))
+                {
+                    field.SetValue(currentObject, EditorGUILayout.ColorField((Color)fieldValue));
+                }
+                else if (field.FieldType == typeof(Gradient))
+                {
+                    Gradient tempGradient = fieldValue as Gradient ?? new Gradient();
+                    SerializedObject serializedObject = new SerializedObject(currentObject);
+                    SerializedProperty gradientProp = serializedObject.FindProperty(field.Name);
+                    EditorGUILayout.PropertyField(gradientProp, true);
+                    serializedObject.ApplyModifiedProperties();
+                }
+
+                else if (field.FieldType.IsArray)
+                {
+                    SerializedObject serializedObject = new SerializedObject(currentObject);
+                    SerializedProperty arrayProperty = serializedObject.FindProperty(field.Name);
+                    EditorGUILayout.PropertyField(arrayProperty, true);
+                    serializedObject.ApplyModifiedProperties();
+                }
                 else if (field.FieldType.IsEnum)
                 {
                     field.SetValue(currentObject, EditorGUILayout.EnumPopup((Enum)fieldValue));
@@ -98,10 +164,17 @@ public class ScriptableObjectCreator : EditorWindow
                 GUILayout.EndHorizontal();
             }
 
+            GUILayout.EndScrollView();
+
+            if (GUILayout.Button("Save ScriptableObject"))
+            {
+                SaveCurrentObject();
+            }
+
             // Adjust window size based on content
-            float height = (scriptableObjectTypes.Length + 3) * 40;
+            float height = currentObject.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance).Length * 20+60+120;
             minSize = new Vector2(300, height);
-            maxSize = new Vector2(600, height);
+            maxSize = new Vector2(600, height+300);
         }
     }
 
