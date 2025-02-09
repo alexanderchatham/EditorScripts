@@ -19,7 +19,7 @@ A collection of useful Unity editor scripts to streamline development workflows.
 
 - **Anchor Setter:**
   1. Select UI elements in the Scene window.
-  2. Press `Ctrl + ``(tilda) or use Tools > Anchors > Set Anchors`.
+  2. Press `Ctrl + `(tilda) or use Tools > Anchors > Set Anchors`.
 
 - **Cloud Code Editor:**
   1. Open the Cloud Code Editor via `Tools > Cloud Code Editor`.
