@@ -2,12 +2,24 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.iOS.Xcode;
+using UnityEditor.iOS.Xcode.Extensions;
 using UnityEngine;
 using System.IO;
 
-public static class iOSPermissionsPostProcessor
+public enum iOSPermissionType
 {
-    // Define your permissions here
+    HealthKit,
+    Bluetooth,
+    Camera,
+    Microphone,
+    LocationWhenInUse,
+    LocationAlways,
+    Motion,
+    PhotoLibrary
+}
+
+public static class iOSPostBuildProcessor
+{
     private static readonly Dictionary<iOSPermissionType, string> permissionDescriptions = new Dictionary<iOSPermissionType, string>
     {
         { iOSPermissionType.HealthKit, "This app uses HealthKit to track your workouts and provide XP in-game." },
@@ -20,17 +32,18 @@ public static class iOSPermissionsPostProcessor
         { iOSPermissionType.PhotoLibrary, "The photo library is used to save and load game screenshots." }
     };
 
-    [PostProcessBuild(999)] // High number so it runs late
+    [PostProcessBuild(999)]
     public static void OnPostProcessBuild(BuildTarget buildTarget, string pathToBuiltProject)
     {
         if (buildTarget != BuildTarget.iOS)
             return;
 
         string plistPath = Path.Combine(pathToBuiltProject, "Info.plist");
+        string projPath = PBXProject.GetPBXProjectPath(pathToBuiltProject);
+
         var plist = new PlistDocument();
         plist.ReadFromFile(plistPath);
-
-        PlistElementDict rootDict = plist.root;
+        var rootDict = plist.root;
 
         foreach (var kvp in permissionDescriptions)
         {
@@ -65,6 +78,45 @@ public static class iOSPermissionsPostProcessor
         }
 
         plist.WriteToFile(plistPath);
-        Debug.Log("✅ iOS permissions added to Info.plist");
+
+        var proj = new PBXProject();
+        proj.ReadFromFile(projPath);
+
+#if UNITY_2019_3_OR_NEWER
+        string target = proj.GetUnityMainTargetGuid();
+        string entitlementsFileName = "Unity-iPhone.entitlements";
+#else
+        string target = proj.TargetGuidByName(PBXProject.GetUnityTargetName());
+        string entitlementsFileName = target + ".entitlements";
+#endif
+
+        // Create or modify entitlements
+        string entitlementsPath = Path.Combine(pathToBuiltProject, entitlementsFileName);
+        var entitlements = new PlistDocument();
+        if (File.Exists(entitlementsPath))
+        {
+            entitlements.ReadFromFile(entitlementsPath);
+        }
+        else
+        {
+            entitlements.root.CreateDict();
+        }
+
+        // Add HealthKit entitlement
+        entitlements.root.SetBoolean("com.apple.developer.healthkit", true);
+        entitlements.WriteToFile(entitlementsPath);
+
+        // Link entitlements file to build
+        proj.AddFile(entitlementsFileName, entitlementsFileName);
+        proj.SetBuildProperty(target, "CODE_SIGN_ENTITLEMENTS", entitlementsFileName);
+
+        // Add HealthKit capability
+        var capManager = new ProjectCapabilityManager(projPath, entitlementsFileName, target);
+        capManager.AddHealthKit();
+        capManager.WriteToFile();
+
+        proj.WriteToFile(projPath);
+
+        Debug.Log("✅ iOS Post Build: Info.plist and entitlements updated with HealthKit and other permissions.");
     }
 }
