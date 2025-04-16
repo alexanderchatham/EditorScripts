@@ -98,7 +98,11 @@ public static class iOSPostBuildProcessor
         }
         else
         {
-            entitlements.root.CreateDict();
+            if (entitlements.root.values.ContainsKey("com.apple.developer.healthkit") == false)
+            {
+                entitlements.root.SetBoolean("com.apple.developer.healthkit", true);
+            }
+
         }
 
         // Add HealthKit entitlement
@@ -111,12 +115,11 @@ public static class iOSPostBuildProcessor
         // Add capabilities
         var capManager = new ProjectCapabilityManager(projPath, entitlementsFileName, target);
         capManager.AddHealthKit();
-        capManager.AddBackgroundModes(new[] {
-            "fetch",
-            "processing",
-            "remote-notification",
-            "external-accessory-communication"
-        });
+        capManager.AddBackgroundModes(
+            BackgroundModesOptions.BackgroundFetch |
+            BackgroundModesOptions.RemoteNotifications |
+            BackgroundModesOptions.ExternalAccessoryCommunication 
+);
         capManager.AddPushNotifications(true);
         capManager.AddInAppPurchase();
         capManager.AddAssociatedDomains(new[] { "applinks:yourgame.example.com" }); // customize this
