@@ -11,6 +11,7 @@ A collection of useful Unity editor scripts to streamline development workflows.
 ## Installation
 1. Clone or download this repository.
 2. Copy the `EditorScripts` folder into your Unity project's `Assets` directory.
+3. Remove unwanted scripts.
 
 ## Usage
 - **Thumbnail Generator:**
