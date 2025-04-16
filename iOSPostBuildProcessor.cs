@@ -90,7 +90,6 @@ public static class iOSPostBuildProcessor
         string entitlementsFileName = target + ".entitlements";
 #endif
 
-        // Create or modify entitlements
         string entitlementsPath = Path.Combine(pathToBuiltProject, entitlementsFileName);
         var entitlements = new PlistDocument();
         if (File.Exists(entitlementsPath))
@@ -106,17 +105,27 @@ public static class iOSPostBuildProcessor
         entitlements.root.SetBoolean("com.apple.developer.healthkit", true);
         entitlements.WriteToFile(entitlementsPath);
 
-        // Link entitlements file to build
         proj.AddFile(entitlementsFileName, entitlementsFileName);
         proj.SetBuildProperty(target, "CODE_SIGN_ENTITLEMENTS", entitlementsFileName);
 
-        // Add HealthKit capability
+        // Add capabilities
         var capManager = new ProjectCapabilityManager(projPath, entitlementsFileName, target);
         capManager.AddHealthKit();
+        capManager.AddBackgroundModes(new[] {
+            "fetch",
+            "processing",
+            "remote-notification",
+            "external-accessory-communication"
+        });
+        capManager.AddPushNotifications(true);
+        capManager.AddInAppPurchase();
+        capManager.AddAssociatedDomains(new[] { "applinks:yourgame.example.com" }); // customize this
+        capManager.AddGameCenter();
+        capManager.AddSignInWithApple();
         capManager.WriteToFile();
 
         proj.WriteToFile(projPath);
 
-        Debug.Log("✅ iOS Post Build: Info.plist and entitlements updated with HealthKit and other permissions.");
+        Debug.Log("✅ iOS Post Build: Info.plist, entitlements, and capabilities configured.");
     }
 }
